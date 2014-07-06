@@ -1,0 +1,375 @@
+<html>
+<head>
+
+
+<script src="jquery-1.11.1.min.js"></script>
+<link rel="stylesheet" type="text/css" href="canvas.css">
+<title>Create Player Radars With This One Weird Trick</title>
+</head>
+<body>
+<canvas id="myCanvas" width="500" height="500"
+style="border:1px solid #000000; display: none">
+</canvas>
+
+<script>
+
+/*
+function StatInfo(statName,statValues) {
+	this.statName = statName;
+	this.statValues = statValues;
+}
+
+
+var statLabels = new Array();
+statLabels[0] = new StatInfo("Passing%",new Array("65","67.5","70","72.5","75","77.5","80","82.5","85"));
+statLabels[1] = new StatInfo("Assists",new Array(".08",".12",".16",".20",".24",".28",".32",".36",".40"));
+statLabels[2] = new StatInfo("Key Passes",new Array("1.12","1.36","1.59","1.83","2.06","2.3","2.53","2.76","3.0"));
+statLabels[3] = new StatInfo("Throughballs",new Array(".13",".195",".26",".325",".39",".455",".52",".585",".65"));
+statLabels[4] = new StatInfo("Int+Tackles",new Array("1.3","1.7","2.1","2.5","2.9","3.3","3.7","4.1","4.5"));
+statLabels[5] = new StatInfo("Dispossessed",new Array("3.0","2.75","2.5","2.25","2.0","1.75","1.5","1.25","1.0"));
+statLabels[6] = new StatInfo("Successful Dribbles",new Array(".7",".93","1.15","1.38","1.6","1.83","2.05","2.28","2.5"));
+statLabels[7] = new StatInfo("Goal Conversion%",new Array("4.5","6.8","9.0","11.3","13.5","15.8","18","20","22.5"));
+statLabels[8] = new StatInfo("Non-Penalty Goals",new Array(".12",".18",".24",".30",".36",".42",".48",".54",".60"));
+statLabels[9] = new StatInfo("Shots",new Array("1.7","2.05","2.4","2.75","3.1","3.45","3.8","4.15","4.5"));
+statLabels[10] = new StatInfo("Shooting%",new Array("27","30.5","34","37.5","41","44.5","48","51.5","55"));
+*/
+
+
+var messiStats = new Array(0.79,5.71,45.9,85.1,0.40,2.70,0.40,0.58,2.48,5.10,17.6);
+var gerrardStats = new Array(86.2,1.98,.24,.44,.48,.62,1.06,.72,2.98,1.51,7.49);
+var playerStats = messiStats.slice(0);
+
+function StatInfo(statName,statMin,statMax) {
+	this.statName = statName;
+	this.statMin = statMin;
+	this.statMax = statMax;
+}
+
+
+var statLabels = new Array();
+statLabels[0] = new StatInfo("Non-Penalty Goals",0.12,0.60);
+statLabels[1] = new StatInfo("Shots",1.7,4.5);
+statLabels[2] = new StatInfo("Shooting%",27,55);
+statLabels[3] = new StatInfo("Passing%",65,85);
+statLabels[4] = new StatInfo("Assists",0.08,0.40);
+statLabels[5] = new StatInfo("Key Passes",1.12,3.0);
+statLabels[6] = new StatInfo("Throughballs",0.13,0.65);
+statLabels[7] = new StatInfo("Int+Tackles",1.3,4.5);
+statLabels[8] = new StatInfo("Dispossessed",3.0,1.0);
+statLabels[9] = new StatInfo("Successful Dribbles",0.7,2.5);
+statLabels[10] = new StatInfo("Goal Conversion%",4.5,22.5);
+
+var cmdmLabels = new Array();
+cmdmLabels[0] = new StatInfo("Passing%",74,90);
+cmdmLabels[1] = new StatInfo("Key Passes",.70,2.5);
+cmdmLabels[2] = new StatInfo("Throughballs",.10,0.50);
+cmdmLabels[3] = new StatInfo("Scoring Contribution",.1,.5);
+cmdmLabels[4] = new StatInfo("Successful Dribbles",0.5,2.1);
+cmdmLabels[5] = new StatInfo("Dispossessed",2.47,.5);
+cmdmLabels[6] = new StatInfo("Fouls",2.36,.6);
+cmdmLabels[7] = new StatInfo("Dribbled Past",1.55,.35);
+cmdmLabels[8] = new StatInfo("Tackles",1.65,4.25);
+cmdmLabels[9] = new StatInfo("Interceptions",1.31,3.55);
+cmdmLabels[10] = new StatInfo("Long Balls",2,8);
+
+
+var curStats = statLabels;
+
+var canvasHeight = 600;
+var canvasWidth = 600;
+playerColor = "rgba(255, 0, 0, 0.6)";
+labelFontSize = 10;
+valueFontSize = 10;
+numrings = 5;
+rotOffset = -Math.PI/2;//(statLabels.length)/2;
+
+
+function reassign() {
+
+	canvasHeight = parseInt(document.getElementById("cheight").value); 
+	canvasWidth = parseInt(document.getElementById("cwidth").value); 
+	curStats = new Array();
+	var count = 0;
+	for(var j = 0; j < 11; j++) {
+		if(document.getElementById("name"+j).innerHTML != "") {
+			
+			curStats[count] = new StatInfo(document.getElementById("name"+j).innerHTML,parseFloat(document.getElementById("min"+j).innerHTML),parseFloat(document.getElementById("max"+j).innerHTML));
+			playerStats[count] = parseFloat(document.getElementById("stat"+j).value)
+			count++;
+		}
+	
+	}
+
+}
+
+
+
+function drawPlot() {
+
+reassign();
+
+cx = 0; // x offset
+cy = 0; // y offset
+r = Math.min(canvasWidth,canvasHeight)/2 - 50;
+
+
+
+// set canvas size
+var c = document.getElementById("myCanvas");
+c.width = canvasWidth;
+c.height = canvasHeight;
+
+
+// get context and set it up
+var ctx = c.getContext("2d");
+ctx.translate(canvasWidth/2, canvasHeight/2);
+ctx.imageSmoothingEnabled = true;
+
+
+// draw rings
+lw = r/(numrings*2);
+ctx.save();
+ctx.strokeStyle="#cdcdcd";
+ctx.lineWidth = lw;
+for(var i = 0; i < numrings; i++) {
+
+	ctx.beginPath();
+	ctx.arc(cx,cy,r/numrings*(i+1)-lw/2,0,2*Math.PI);
+	ctx.closePath();
+	ctx.stroke();
+
+}
+ctx.restore();
+
+var gdots = new Array();
+var rdots = new Array();
+// draw player stats
+ctx.save();
+ctx.fillStyle = playerColor;
+ctx.beginPath();
+for (var i = 0; i < curStats.length; i++) { 
+	
+	statg = 0;
+	statr = 0;
+	
+	rad = (2*Math.PI/curStats.length)*i + rotOffset;
+	newr = 2*lw + 8*lw*(playerStats[i]-curStats[i].statMin)/(curStats[i].statMax-curStats[i].statMin);//Math.random()*r;
+	if(newr > r) {
+		newr = r;
+		statg = 1;
+	}
+	if(newr < 0) {
+		newr = 0;
+		statr = 1;
+	}
+	
+	
+	
+	newy = newr*Math.sin(rad);
+	newx = newr*Math.cos(rad);
+	
+	if(statg == 1)
+		gdots[gdots.length] = new Array(newx,newy);
+	if(statr == 1)
+		rdots[rdots.length] = new Array(newx,newy);
+		
+	
+	if(i == 0)
+		ctx.moveTo(cx+newx, cy+newy);
+	else
+		ctx.lineTo(cx+newx, cy+newy);
+
+}
+
+ctx.closePath();
+ctx.fill();
+
+
+
+
+/*  
+// use clipping method
+c2.clip();
+
+ctx.beginPath();
+ctx.lineWidth = lw;
+ctx.fillStyle="#004b96";
+ctx.arc(cx,cy,250,0,2*Math.PI);
+ctx.closePath();
+ctx.fill();
+
+for(var i = 0; i < numrings; i++) {
+	ctx.beginPath();
+	ctx.strokeStyle="#a5224c";
+	ctx.arc(cx,cy,r/numrings*(i+1)-lw/2,0,2*Math.PI);
+	ctx.closePath();
+	ctx.stroke();
+}
+*/
+
+ctx.restore();
+
+
+/*
+ctx.save();
+ctx.fillStyle = "green";
+for (var i = 0; i < gdots.length; i++) { 
+
+	ctx.beginPath();
+	ctx.arc(cx+gdots[i][0],cy+gdots[i][1],5,0,2*Math.PI);
+	ctx.closePath();
+	ctx.fill();
+}
+ctx.restore();	
+
+ctx.save();
+ctx.fillStyle = "red";
+for (var i = 0; i < rdots.length; i++) { 
+
+	ctx.beginPath();
+	ctx.arc(cx+rdots[i][0],cy+rdots[i][1],5,0,2*Math.PI);
+	ctx.closePath();
+	ctx.fill();
+}
+ctx.restore();	
+*/
+
+// draw labels
+ctx.save();
+ctx.fillStyle = "black";
+ctx.font = "bold " + labelFontSize + "px Arial";
+ctx.textAlign = "center";
+for (var i = 0; i < curStats.length; i++) { 
+
+	//deg = (360/statLabels.length)*i;
+	//rad = deg*Math.PI/180.0;
+	rad = (2*Math.PI/curStats.length)*i + rotOffset;
+
+	//newr = Math.random()*r;
+	//newy = newr*Math.sin(rad);
+	//newx = newr*Math.cos(rad);
+
+	ctx.save();
+	
+	if((rad < Math.PI)&&(rad > 0)) {
+		ctx.rotate(rad-Math.PI/2);
+		ctx.fillText(curStats[i].statName, 0, r+20);
+		for(var j = 0; j < 9; j++) {
+			ctx.font = "bold " + valueFontSize + "px Arial";
+			ctx.fillText(Math.round((curStats[i].statMin+j*(curStats[i].statMax-curStats[i].statMin)/8)*1000)/1000, 0, (r/(numrings*2))*(j+1)+lw+3);
+		}
+	} else {
+		ctx.rotate(rad+Math.PI/2);
+		ctx.fillText(curStats[i].statName, 0, -r-15);
+		for(var j = 0; j < 9; j++) {
+			ctx.font = "bold " + valueFontSize + "px Arial";
+			ctx.fillText(Math.round((curStats[i].statMin+j*(curStats[i].statMax-curStats[i].statMin)/8)*1000)/1000, 0, -(r/(numrings*2))*(j+1)-lw+valueFontSize/2);
+		}
+	}
+	
+	
+	ctx.restore();
+
+}
+
+ctx.restore();
+
+var dataURL = c.toDataURL();
+
+      // set canvasImg image src to dataURL
+      // so it can be saved as an image
+document.getElementById('canvasImg').src = dataURL;
+
+}
+
+
+
+
+/*
+var c2 = c.getContext('2d');
+c2.fillStyle = '#f00';
+c2.beginPath();
+
+c2.lineTo(100,50);
+c2.lineTo(50, 100);
+c2.lineTo(0, 90);
+c2.closePath();
+c2.fill();
+*/
+
+
+
+
+function fillFWAM() {
+	for(var i = 0; i < statLabels.length; i++) {
+		document.getElementById('name'+i).innerHTML = statLabels[i].statName;
+		document.getElementById('min'+i).innerHTML = statLabels[i].statMin;
+		document.getElementById('max'+i).innerHTML = statLabels[i].statMax;
+		document.getElementById('stat'+i).value = messiStats[i];
+	}
+
+
+}
+
+function fillCMDM() {
+	for(var i = 0; i < cmdmLabels.length; i++) {
+		document.getElementById('name'+i).innerHTML = cmdmLabels[i].statName;
+		document.getElementById('min'+i).innerHTML = cmdmLabels[i].statMin;
+		document.getElementById('max'+i).innerHTML = cmdmLabels[i].statMax;
+		document.getElementById('stat'+i).value = gerrardStats[i];
+	}
+
+
+}
+
+</script>
+
+
+<div id="numbers">
+<table>
+<thead>
+<tr><td>stat name</td><td>min</td><td>max</td><td>value</td></tr>
+</thead>
+<tbody>
+<tr><td><div id=name0 class=slabel></div></td><td><div  id=min0 class=snumber></div></td><td><div id=max0 class=snumber></div></td><td><input id=stat0 type=textarea></td></tr>
+<tr><td><div id=name1 class=slabel></div></td><td><div  id=min1 class=snumber></div></td><td><div id=max1 class=snumber></div></td><td><input id=stat1 type=textarea></td></tr>
+<tr><td><div id=name2 class=slabel></div></td><td><div  id=min2 class=snumber></div></td><td><div id=max2 class=snumber></div></td><td><input id=stat2 type=textarea></td></tr>
+<tr><td><div id=name3 class=slabel></div></td><td><div  id=min3 class=snumber></div></td><td><div id=max3 class=snumber></div></td><td><input id=stat3 type=textarea></td></tr>
+<tr><td><div id=name4 class=slabel></div></td><td><div  id=min4 class=snumber></div></td><td><div id=max4 class=snumber></div></td><td><input id=stat4 type=textarea></td></tr>
+<tr><td><div id=name5 class=slabel></div></td><td><div  id=min5 class=snumber></div></td><td><div id=max5 class=snumber></div></td><td><input id=stat5 type=textarea></td></tr>
+<tr><td><div id=name6 class=slabel></div></td><td><div  id=min6 class=snumber></div></td><td><div id=max6 class=snumber></div></td><td><input id=stat6 type=textarea></td></tr>
+<tr><td><div id=name7 class=slabel></div></td><td><div  id=min7 class=snumber></div></td><td><div id=max7 class=snumber></div></td><td><input id=stat7 type=textarea></td></tr>
+<tr><td><div id=name8 class=slabel></div></td><td><div  id=min8 class=snumber></div></td><td><div id=max8 class=snumber></div></td><td><input id=stat8 type=textarea></td></tr>
+<tr><td><div id=name9 class=slabel></div></td><td><div  id=min9 class=snumber></div></td><td><div id=max9 class=snumber></div></td><td><input id=stat9 type=textarea></td></tr>
+<tr><td><div id=name10 class=slabel></div></td><td><div  id=min10 class=snumber></div></td><td><div id=max10 class=snumber></div></td><td><input id=stat10 type=textarea></td></tr>
+<!--<tr><td><input id=name11 type=textarea></td><td><input id=min11 type=textarea></td><td><input id=max11 type=textarea></td><td><input id=stat11 type=textarea></td></tr>-->
+</tbody>
+</table>
+<span onclick="fillFWAM()" class="button template">FW/AM Template</span>
+<span onclick="fillCMDM()" class="button template">CM/DM Template</span>
+<span onclick="drawPlot()" class="button">draw!</span>
+<br><br>
+<span class=ilabel>width: </span><input id=cwidth value=600 type=textarea>
+<span class=ilabel>height: </span><input id=cheight value=600 type=textarea>
+</div>
+<img id="canvasImg" alt="Right click to save me!">
+
+<script>
+
+drawPlot();
+
+var currentel = null;
+
+
+$('input').focus(function(event) {
+	currentel = this;
+	setTimeout(function(){currentel.setSelectionRange(0, 9999);},30);
+	//$(this).select();
+	//.setSelectionRange(0, 9999);
+
+});
+
+
+</script>
+</body>
+</html>
