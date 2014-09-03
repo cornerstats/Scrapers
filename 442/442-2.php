@@ -6,7 +6,7 @@
     </head>
 <body>
 <div class="wrapper">
-    <form name="form1" method="GET" action="<?php ?>">
+    <form name="form1" method="POST" action="<?php ?>">
 <label for="url">URL:</label>
 <input name="url"   type="text" id="url" size="85">
 <br/>   
@@ -56,11 +56,19 @@ $raw=file_get_contents_curl($url) or die('could not select');
 
  
 // here is the start and finish points we don't care about the stuff either side    
-$start=strpos($raw,'<image x="0" y="0" width="760" height="529" xlink:href="/sites/fourfourtwo.com/modules/custom/statzone/files/statszone_football_pitch.png" />');
+$start=strpos($raw,'<h2>Shots - All attempts</h2>');
 $end = strpos($raw,'</svg>');
+
 $table = substr($raw,$start,$end-$start);
 
 // oh but wait there is loads of junk here we can strip out too
+$table = str_replace('<svg',"\n",$table);
+
+$table = str_replace('<img',"\n",$table);
+
+$table = str_replace('<defs>'," ",$table);
+$table = str_replace('</def>'," ",$table);
+
 $table = str_replace('/><line class="pitch-object',"\n",$table);
 $table = str_replace('marker-end="url(#smallblue)"','',$table); 
 $table = str_replace('style="stroke:blue;stroke-width:3"','',$table);
@@ -68,10 +76,53 @@ $table = str_replace('style="stroke:red;stroke-width:3"','',$table);
 $table = str_replace('marker-end="url(#smallred)"','',$table);      
 $table = str_replace('marker-end="url(#smalldeepskyblue)"','',$table);
 $table = str_replace('style="stroke:deepskyblue;stroke-width:3"','',$table);
-$table = str_replace('<image x="0" y="0" width="760" height="529" xlink:href="/sites/fourfourtwo.com/modules/custom/statzone/files/statszone_football_pitch.png"','',$table);    
-    
-// poop poop poop    
-var_dump($table);    
+$table = str_replace('<image x="0" y="0" width="760" height="529" xlink:href="/sites/fourfourtwo.com/modules/custom/statzone/files/statszone_football_pitch.png"','',$table);
+$table = str_replace('<','',$table);
+$table = str_replace('>','',$table);
+$table = str_replace('style="stroke:yellow;stroke-width:3"','',$table);
+
+$start =  '/marker/defsimage x="0" y="0" width="760" height="529" xlink:href="/sites/fourfourtwo.com/modules/custom/statzone/files/statszone_football_pitch_shot.png"';
+
+$table = explode($start,$table);
+
+$table = $table['1'];
+
+
+$table = str_replace('marker-start="url(#'," ",$table);
+$table = str_replace('marker-end="url(#bigyellow)"'," ",$table);
+$table = str_replace('marker-end="url(#bigred)"'," ",$table);
+$table = str_replace('marker-end="url(#bigblue)"'," ",$table);
+$table = str_replace('marker-end="url(#bigdarkgrey)"'," ",$table);
+$table = str_replace(')"'," ",$table);
+$table = str_replace('style="stroke:darkgrey;stroke-width:3"'," ",$table);
+
+    $table = str_replace(' x',',x',$table);
+    $table = str_replace(' y',',y',$table);
+    $table = str_replace('" ','"',$table);
+    $table = str_replace('big',',',$table);
+    $table = str_replace('end','',$table);
+    $table = str_replace('"','',$table);
+    $table = str_replace('-',', ',$table);
+    $table = str_replace('timer','',$table);
+
+    $table = str_replace('x1=','',$table);
+    $table = str_replace('x2=','',$table);
+    $table = str_replace('y1=','',$table);
+    $table = str_replace('y2=','',$table);
+
+    $table = str_replace('yellow','Goal',$table);
+    $table = str_replace('blue','Save',$table);
+    $table = str_replace('red','Wide',$table);
+    $table = str_replace('darkgrey','Block',$table);
+    $table = str_replace('   /',"\n\n",$table);
+    $table = str_replace(' ,',',',$table);
+    $table = str_replace('  ,',',',$table);
+    $table = str_replace(', ',',',$table);
+
+// poop poop poop
+print '<pre>';
+    var_dump($table);
+print '</pre>';
 
 }
 
@@ -79,7 +130,7 @@ var_dump($table);
 // http://www.fourfourtwo.com/statszone/8-2013/matches/695238/team-stats/80/1_PASS_01#tabs-wrapper-anchor
 
 
-$url=$_GET['url'];
+$url=$_POST['url'];
 
 if (isset($url) && $url !== '')
 {
