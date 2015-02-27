@@ -11,5 +11,5 @@ prerequisites & To do:
       4 enter the url
       5 Get some results.
       6 Tweak the code to suit your needs and commit it back to the repo to help your fellow nerds
-        6a ideally with some well documented improvements.
+        ideally with some well documented improvements.
    
