@@ -8,13 +8,12 @@ class CFC_scraper {
             $raw = $this->file_get_contents_curl($url) or die('could not select');
             $newlines=array("\t","\n","\r","\x20\x20","\0","\x0B","<br/>","<p>","</p>","<br>");
             $content=str_replace($newlines, "", html_entity_decode($raw));
-            $content=str_replace('-','0',$content);
-            $start=strpos($content,'<div class="tablecontainer">');
-            $end = strpos($content,'</div>');
+            //$content=str_replace('-','0',$content);
+            $start=strpos($content,'</h4>');
+            $end = strpos($content,'<br>');
             $table = substr($content,$start,$end-$start);
             preg_match_all("|<tr(.*)</tr>|U",$table,$rows);
 
-            print count($rows) ."<br/>";
 
             foreach ($rows[0] as $row){
                     if ((strpos($row,'<th')===false)) {
@@ -31,21 +30,19 @@ class CFC_scraper {
                                             $field3   = strip_tags($cells[0][2])
                                             otherwise we'll loop through them all...
                                             */
-		                                    $f.$i   = strip_tags($cells[0][$i]);
-                                            $output .= $f.$i;
+	                                        $output .= ($cells[0][$i]) . PHP_EOL;
                                             $i++;
 		                             endwhile;
 
-                                // you can format the data as you please, this is comma seperated
-                                // try an insert statement for Mysql
-                                // or put into a csv or json
-                                print $output ."\n<br/>";
+
 	                }
-                    else {
-        
-                                echo ('if failed');
-                    } 
+
             }
+
+	        // you can format the data as you please, this is comma seperated
+	        // try an insert statement for Mysql
+	        // or put into a csv or json
+	        print $output .PHP_EOL;
     
             echo '</pre>';
         }
