@@ -1,6 +1,6 @@
 <?php
 // whoscored shots analysis
-$url='http://dev.io/statalysts/who/live.html';
+$url='live.html';
 // set some php ini warnings and dump lengths etc
 error_reporting(E_ALL ^ E_NOTICE);
 ini_set('user_agent', 'Mozilla/5.0');
