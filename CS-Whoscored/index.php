@@ -92,7 +92,7 @@
 
 //make x 'correct' if own goal
 				if( strpos($small[$n],'Goal') !== FALSE && strpos($sections[$t],'isOwnGoal') !== FALSE) {$x=100-$x;}
-
+				if($x==100){$x=99.9;}
 				$adjacient = 100-$x;
 
 //account for OG x value!!!!
